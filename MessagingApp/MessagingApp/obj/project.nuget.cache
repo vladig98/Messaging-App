@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "P2W7bOvlETxl0L7ATXY4o1B0UdogxK01KPBBO55X8eJ5Epn+bfYwrVr7Dha3yMfl/9Ji4J5TB8JEYgK2Nea/ww==",
+  "success": true,
+  "projectFilePath": "E:\\Messaging-App\\MessagingApp\\MessagingApp\\MessagingApp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Vladi Gotsin\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
+    "C:\\Users\\Vladi Gotsin\\.nuget\\packages\\microsoft.openapi\\1.2.3\\microsoft.openapi.1.2.3.nupkg.sha512",
+    "C:\\Users\\Vladi Gotsin\\.nuget\\packages\\swashbuckle.aspnetcore\\6.4.0\\swashbuckle.aspnetcore.6.4.0.nupkg.sha512",
+    "C:\\Users\\Vladi Gotsin\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.4.0\\swashbuckle.aspnetcore.swagger.6.4.0.nupkg.sha512",
+    "C:\\Users\\Vladi Gotsin\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.4.0\\swashbuckle.aspnetcore.swaggergen.6.4.0.nupkg.sha512",
+    "C:\\Users\\Vladi Gotsin\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\6.4.0\\swashbuckle.aspnetcore.swaggerui.6.4.0.nupkg.sha512"
+  ],
+  "logs": []
+}

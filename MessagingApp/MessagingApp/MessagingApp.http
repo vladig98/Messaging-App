@@ -1,0 +1,10 @@
+@MessagingApp_HostAddress = http://localhost:5233
+
+GET {{MessagingApp_HostAddress}}/Messaging/{id}
+Accept: application/json
+###
+
+POST {{MessagingApp_HostAddress}}/Messaging/send?message=test
+Accept: application/json
+
+###
