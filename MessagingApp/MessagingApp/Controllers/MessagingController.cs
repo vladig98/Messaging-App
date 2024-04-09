@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MessagingApp.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MessagingApp.Controllers
 {
@@ -14,9 +15,17 @@ namespace MessagingApp.Controllers
         }
 
         [HttpGet("{id}", Name = "GetMessage")]
-        public string Get(string id)
+        public Message Get(string id)
         {
-            return "You successfuly pulled a message!";
+            var message = new Message()
+            {
+                ChatId = Guid.NewGuid().ToString(),
+                Id = Guid.NewGuid().ToString(),
+                Text = "This is a test message",
+                UserId = Guid.NewGuid().ToString()
+            };
+
+            return message;
         }
 
         [HttpPost("send")]
