@@ -141,3 +141,4 @@ E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\runtimes\win\lib\net
 E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 E:\Messaging-App\MessagingApp\MessagingApp\obj\Debug\net8.0\MessagingApp.sourcelink.json
+E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

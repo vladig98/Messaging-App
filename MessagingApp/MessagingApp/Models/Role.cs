@@ -9,8 +9,6 @@ namespace MessagingApp.Models
             Users = new List<User>();
         }
 
-        public string Id { get; set; }
-        public string Name { get; set; }
         public List<User> Users { get; set; }
     }
 }
