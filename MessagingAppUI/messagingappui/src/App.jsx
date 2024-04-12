@@ -93,8 +93,6 @@ function App() {
         console.log(response)
         const data = await response.json();
         console.log(data)
-        //const data = await response.text();
-        //console.log(data)
         setForecasts(data);
     }
 }

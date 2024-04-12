@@ -1,5 +1,8 @@
 using MessagingApp.Data;
+using MessagingApp.Middleware.ExtensionMethods;
 using MessagingApp.Models;
+using MessagingApp.Services;
+using MessagingApp.Services.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +31,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Add services to the container.
 
+builder.Services.AddTransient<IUserService, UserService>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
@@ -49,6 +54,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseErrorHandlingMiddleware();
 
 app.UseHttpsRedirection();
 

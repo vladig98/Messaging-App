@@ -1,12 +1,6 @@
 ﻿using MessagingApp.Dtos;
-using MessagingApp.Enums;
-using MessagingApp.Models;
-using Microsoft.AspNetCore.Identity;
+using MessagingApp.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace MessagingApp.Controllers
 {
@@ -14,67 +8,44 @@ namespace MessagingApp.Controllers
     [Route("[controller]")]
     public class UsersController : Controller
     {
-        private readonly UserManager<User> _userManager;
-        private readonly RoleManager<Role> _roleManager;
         private readonly ILogger<UsersController> _logger;
-        private readonly IConfiguration _configuration;
-        private readonly SignInManager<User> _signInManager;
+        private readonly IUserService _userService;
 
-        public UsersController(UserManager<User> userManager, RoleManager<Role> roleManager, ILogger<UsersController> logger,
-            IConfiguration configuration, SignInManager<User> signInManager)
+        public UsersController(ILogger<UsersController> logger, IUserService userService)
         {
-            _userManager = userManager;
-            _roleManager = roleManager;
             _logger = logger;
-            _configuration = configuration;
-            _signInManager = signInManager;
-        }
-
-        private string GenerateToken(string userId)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var Sectoken = new JwtSecurityToken(_configuration["Jwt:Issuer"],
-              _configuration["Jwt:Issuer"],
-              new List<Claim>()
-              {
-                  new Claim(JwtRegisteredClaimNames.Sub, userId)
-              },
-              expires: DateTime.Now.AddMinutes(120),
-              signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(Sectoken);
-        }
-
-        private JwtSecurityToken DecryptToken(string token)
-        {
-            var handler = new JwtSecurityTokenHandler();
-            var jsonToken = handler.ReadToken(token);
-            var tokenS = jsonToken as JwtSecurityToken;
-
-            //tokenS.Claims.First(x => x.Type == "sub").Value
-
-            return tokenS;
+            _userService = userService;
         }
 
         [HttpPost("/login")]
         public async Task<ActionResult> Login(LoginDto loginData)
         {
-            var result = await _signInManager.PasswordSignInAsync(loginData.Username, loginData.Password, false, lockoutOnFailure: true);
-
-            if (!result.Succeeded)
+            //prevents multiple sign ins
+            if (User.Identity.IsAuthenticated)
             {
-                return BadRequest();
+                await _userService.Logout();
+
+                _logger.LogInformation("User logged out due to an attempt to log in again!");
+
+                return Ok();
             }
 
-            _logger.LogInformation("User logged in.");
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError("Invalid data provided for login!");
+                return BadRequest("Incorrect values provided!");
+            }
 
-            var user = await _userManager.FindByNameAsync(loginData.Username);
+            string token = await _userService.Login(loginData.Username, loginData.Password);
 
-            var token = GenerateToken(user.Id);
+            if (string.IsNullOrEmpty(token) || string.IsNullOrWhiteSpace(token))
+            {
+                _logger.LogError("Failed to retireved token!");
 
-            DecryptToken(token);
+                return BadRequest("Invalid data entered!");
+            }
+
+            _logger.LogInformation("User logged in successfully!");
 
             return Ok(token);
         }
@@ -82,45 +53,21 @@ namespace MessagingApp.Controllers
         [HttpPost("/register")]
         public async Task<ActionResult> Register(RegisterDto registerData)
         {
-            var role = new Role()
+            if (!ModelState.IsValid)
             {
-                Name = RoleName.User.ToString(),
-                Id = Guid.NewGuid().ToString()
-            };
-
-            bool doesRoleExist = await _roleManager.RoleExistsAsync(role.Name);
-
-            if (!doesRoleExist)
-            {
-                await _roleManager.CreateAsync(role);
+                _logger.LogError("Invalid data provided for registration!");
+                return BadRequest("Incorrect values provided!");
             }
 
-            var user = new User()
-            {
-                Id = Guid.NewGuid().ToString(),
-                Email = registerData.Email,
-                FirstName = registerData.FirstName,
-                LastName = registerData.LastName,
-                UserName = registerData.Username,
-                RoleId = role.Id,
-                Role = role
-            };
+            string token = await _userService.Register(registerData.Username, registerData.Password, registerData.FirstName, registerData.LastName, registerData.Email);
 
-            var result = await _userManager.CreateAsync(user, registerData.Password);
-
-            if (result.Succeeded)
+            if (string.IsNullOrEmpty(token) || string.IsNullOrWhiteSpace(token))
             {
-                await _userManager.AddToRoleAsync(user, role.Name);
-                await _userManager.AddClaimAsync(user, claim: new Claim(ClaimTypes.Role.ToString(), role.Name));
-                _logger.LogInformation("User created a new account with password.");
+                _logger.LogError("Failed to retireved token!");
+                return BadRequest("Invalid data entered!");
             }
 
-            foreach (var error in result.Errors)
-            {
-                _logger.LogError(error.Description);
-            }
-
-            var token = GenerateToken(user.Id);
+            _logger.LogInformation("User registered successfully!");
 
             return Ok(token);
         }
