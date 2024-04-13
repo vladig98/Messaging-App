@@ -1,8 +1,11 @@
-﻿using MessagingApp.Enums;
+﻿using MessagingApp.Data;
+using MessagingApp.Dtos;
+using MessagingApp.Enums;
 using MessagingApp.Models;
 using MessagingApp.Services.Contracts;
 using MessagingApp.Utilities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace MessagingApp.Services
@@ -14,15 +17,38 @@ namespace MessagingApp.Services
         private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly IConfiguration _configuration;
+        private readonly MessageAppDbContext _messageAppDbContext;
 
         public UserService(ILogger<IUserService> logger, UserManager<User> userManager, SignInManager<User> signInManager,
-            RoleManager<Role> roleManager, IConfiguration configuration)
+            RoleManager<Role> roleManager, IConfiguration configuration, MessageAppDbContext messageAppDbContext)
         {
             _logger = logger;
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _configuration = configuration;
+            _messageAppDbContext = messageAppDbContext;
+        }
+
+        public async Task<List<UserDto>> GetAllUsers()
+        {
+            List<UserDto> users = new List<UserDto>();
+
+            var dbUsers = await _messageAppDbContext.Users.ToListAsync();
+
+            foreach (var user in dbUsers)
+            {
+                var message = await _messageAppDbContext.Messages.FirstOrDefaultAsync(m => m.UserId == user.Id);
+
+                users.Add(new UserDto
+                {
+                    Username = user.UserName,
+                    Message = message == null ? string.Empty : (string.IsNullOrEmpty(message.Text) ? string.Empty : message.Text),
+                    Image = ""
+                });
+            }
+
+            return users;
         }
 
         public async Task<string> Login(string username, string password)

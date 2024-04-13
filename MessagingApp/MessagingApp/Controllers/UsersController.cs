@@ -17,6 +17,14 @@ namespace MessagingApp.Controllers
             _userService = userService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _userService.GetAllUsers();
+
+            return Ok(users);
+        }
+
         [HttpPost("/login")]
         public async Task<ActionResult> Login(LoginDto loginData)
         {
@@ -52,7 +60,14 @@ namespace MessagingApp.Controllers
 
         [HttpPost("/register")]
         public async Task<ActionResult> Register(RegisterDto registerData)
-        {
+        { 
+            if (User.Identity.IsAuthenticated)
+            {
+                _logger.LogInformation("User registration failed. User is logged in!");
+
+                return BadRequest("Already logged in!");
+            }
+
             if (!ModelState.IsValid)
             {
                 _logger.LogError("Invalid data provided for registration!");
