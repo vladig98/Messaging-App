@@ -18,5 +18,7 @@ namespace MessagingApp.Models
 
         public List<Chat> ReceiverChats { get; set; }
         public List<Chat> SenderChats { get; set; }
+
+        public string ImageURL { get; set; }
     }
 }

@@ -1,86 +1,14 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import Error from './components/error/error.jsx';
+import Login from './components/loginPage/loginPage.jsx';
+import Register from './components/registerPage/registerPage.jsx';
+import Home from './components/home/home.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const JWTStorageName = "JWTAuthToken"
-
-function Register({ setFirstName, setLastName, setPassword, setEmail, setUserName, visible, register, setVisible, clearErrors }) {
-    return (
-        <>
-            {visible && (
-                <div>
-                    <form onSubmit={register} className={"w-50 mx-auto mt-5 text-end"}>
-                        <div className={"form-floating mb-3"}>
-                            <input placeholder={"First name"} id={"registerFirstName"} className={"form-control"} type="text" onChange={e => setFirstName(e.target.value)} />
-                            <label htmlFor={"registerFirstName"} className={"form-label"}>First name</label>
-                        </div>
-                        <div className={"form-floating mb-3"}>
-                            <input placeholder={"Last name"} id={"registerLastName"} className={"form-control"} type="text" onChange={e => setLastName(e.target.value)} />
-                            <label htmlFor={"registerLastName"} className={"form-label"}>Last name</label>
-                        </div>
-                        <div className={"form-floating mb-3"}>
-                            <input placeholder={"Login name"} id={"registerLoginName"} className={"form-control"} type="text" onChange={e => setUserName(e.target.value)} />
-                            <label htmlFor={"registerLoginName"} className={"form-label"}>Login name</label>
-                        </div>
-                        <div className={"form-floating mb-3"}>
-                            <input placeholder={"Password"} id={"registerPassword"} className={"form-control"} type="password" onChange={e => setPassword(e.target.value)} />
-                            <label htmlFor={"registerPassword"} className={"form-label"}>Password</label>
-                        </div>
-                        <div className={"form-floating mb-3"}>
-                            <input placeholder={"Email"} id={"registerEmail"} className={"form-control"} type="email" onChange={e => setEmail(e.target.value)} />
-                            <label htmlFor={"registerEmail"} className={"form-label"}>Email</label>
-                        </div>
-                        <button className={"btn btn-primary"} type="submit">Register</button>
-                        <button className={"btn btn-danger ms-3"} onClick={() => {
-                            setVisible(!visible)
-                            clearErrors()
-                        }}>Back</button>
-                    </form>
-                </div>
-            )}
-        </>
-    );
-}
-
-function Login({ setUserName, setPassword, visible, login }) {
-    return (
-        <div>
-        {visible && (
-                <div>
-                    <form onSubmit={login} className={"w-50 mx-auto mt-5 text-end"}>
-                        <div className={"form-floating mb-3"}>
-                            <input placeholder={"Login name"} id={"loginLoginname"} className={"form-control"} type="text" onChange={e => setUserName(e.target.value)} />
-                            <label htmlFor={"loginLoginname"} className={"form-label"}>Login name:</label>
-                        </div>
-                            <div className={"form-floating mb-3"}>
-                            <input placeholder={"Password"} id={"loginPassword"} className={"form-control"} type="password" onChange={e => setPassword(e.target.value)} />
-                            <label htmlFor={"loginPassword"} className={"form-label"}>Password</label>
-                        </div>
-                        <button className={"btn btn-primary"} type="submit">Login</button>
-                    </form>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function Error({ message }) {
-    return (
-        <div className={"mx-auto w-50 text-danger"}>
-            <span>{message}</span>
-        </div>
-    )
-}
-
-function User({user, message}) {
-    return (
-        <div>
-            <img />
-            <h4></h4>
-            <span></span>
-        </div>
-    )
-}
-
+const UsersStorageName = "UsersInfo"
 
 function App() {
     const [userName, setUserName] = useState();
@@ -88,21 +16,90 @@ function App() {
     const [firstName, setFirstName] = useState();
     const [lastName, setLastName] = useState();
     const [email, setEmail] = useState();
-    const [registerVisible, setRegisterVisible] = useState(false);
-    const [loginVisible, setLoginVisible] = useState(true);
     const [jwt, setJwt] = useState(() => {
         const storedJwt = localStorage.getItem(JWTStorageName);
         return storedJwt ? storedJwt : "";
     });
+    const [loggedIn, setLoggedIn] = useState(false)
     const [errors, setErrors] = useState([]);
+    const [users, setUsers] = useState([])
+    const navigate = useNavigate()
 
     useEffect(() => {
-        jwt ? setLoginVisible(false) : setLoginVisible(true);
-        setRegisterVisible(false)
+        if (jwt) {
+            setLoggedIn(true)
+        } else {
+            setLoggedIn(false)
+        }
     }, [jwt]);
 
-    function clearErrors() {
-        setErrors([])
+    useEffect(() => {
+        const storedUsers = localStorage.getItem(UsersStorageName);
+        if (storedUsers !== null) {
+            const parsedUsers = JSON.parse(storedUsers);
+            setUsers(parsedUsers);
+        }
+    }, []);
+
+    async function getUsers() {
+        console.log(jwt)
+        const response = await fetch('https://localhost:7238/users', {
+            method: "GET",
+            mode: 'cors',
+            credentials: "include",
+            headers: new Headers({
+                'Authorization': 'Bearer ' + jwt,
+            }), 
+        });
+
+        let data = await response.text();
+        let json = await handleResponse(data)
+
+        await updateUsers(json, data)
+    }
+
+    async function updateUsers(json, data) {
+        if (json) {
+            data ? localStorage.setItem(UsersStorageName, data) : localStorage.removeItem(UsersStorageName);
+            data ? setUsers(data) : setUsers([]);
+        } else {
+            let errors = json.errors
+            let err = [];
+
+            for (let e in errors) {
+                err.push(errors[e][0])
+            }
+
+            setErrors(err)
+        }
+    }
+
+    async function updateJWT(json, data) {
+        if (!json) {
+            data ? localStorage.setItem(JWTStorageName, data) : localStorage.removeItem(JWTStorageName);
+            data ? setJwt(data) : setJwt();
+        } else {
+            let errors = json.errors
+            let err = [];
+
+            for (let e in errors) {
+                err.push(errors[e][0])
+            }
+
+            setErrors(err)
+        }
+    }
+
+    async function handleResponse(data) {
+        let json;
+
+        try {
+            json = JSON.parse(data)
+        } catch (e) {
+
+        }
+
+        return json;
     }
 
     async function register(e) {
@@ -125,27 +122,11 @@ function App() {
             )
         });
         const data = await response.text();
-        let json;
+        let json = await handleResponse(data)
+        await updateJWT(json, data)
+        await getUsers()
 
-        try {
-            json = JSON.parse(data)
-        } catch (e) {
-
-        }
-
-        if (!json) {
-            data ? localStorage.setItem(JWTStorageName, data) : localStorage.removeItem(JWTStorageName);
-            data ? setJwt(data) : setJwt();
-        } else {
-            let errors = json.errors
-            let err = [];
-
-            for (let e in errors) {
-                err.push(errors[e][0])
-            }
-
-            setErrors(err)
-        }
+        navigate('/');
     }
 
     async function login(e) {
@@ -164,65 +145,47 @@ function App() {
                 }
             )
         });
+
         const data = await response.text();
-        let json;
+        let json = await handleResponse(data)
+        await updateJWT(json, data)
+        await getUsers()
 
-        try {
-            json = JSON.parse(data)
-        } catch (e) {
-
-        }
-
-        if (!json) {
-            data ? localStorage.setItem(JWTStorageName, data) : localStorage.removeItem(JWTStorageName);
-            data ? setJwt(data) : setJwt();
-        } else {
-            let errors = json.errors
-            let err = [];
-
-            for (let e in errors) {
-                err.push(errors[e][0])
-            }
-
-            setErrors(err)
-        }
-    }
-
-    let heading;
-
-    if (registerVisible) {
-        heading = "Register to chat"
-    } else {
-        heading = "Messaging App"
+        navigate('/');
     }
 
     return (
         <div>
-            <h1 className={"mx-auto text-center mt-5"}>{heading}</h1>
-            {errors.map((item, index) => (
-                <Error key={index} message={item} />
-            ))}
-            {registerVisible === false && (
-                <div>
-                    <Login setPassword={setPassword} setUserName={setUserName} visible={loginVisible} login={login} />
-                    {loginVisible && < div className={"mx-auto w-50 text-center pt-5"}>
-                        <a className={"link-primary"} onClick={(e) => { e.preventDefault(); setRegisterVisible(true), setErrors([]) }}>
-                            Click here to Register
-                        </a>
-                    </div>}
-                </div>
-            )}
-            <Register
-                setVisible={setRegisterVisible}
-                register={register}
-                setFirstName={setFirstName}
-                setLastName={setLastName}
-                setPassword={setPassword}
-                setEmail={setEmail}
-                setUserName={setUserName}
-                visible={registerVisible}
-                clearErrors={clearErrors}
-            />
+            <Routes>
+                <Route path="/" element={
+                    <Home
+                        loggedIn={loggedIn}
+                        users={users}
+                    />
+                } />
+                <Route path="/login" element={
+                    <Login
+                        setPassword={setPassword}
+                        setUserName={setUserName}
+                        login={login}
+                        loggedIn={loggedIn}
+                    />
+                } />
+                <Route path="/register" element={
+                    <Register
+                        register={register}
+                        setFirstName={setFirstName}
+                        setLastName={setLastName}
+                        setPassword={setPassword}
+                        setEmail={setEmail}
+                        setUserName={setUserName}
+                        loggedIn={loggedIn}
+                    />
+                } />
+            </Routes>
+            {/*{errors.map((item, index) => (*/}
+            {/*    <Error key={index} message={item} />*/}
+            {/*))}*/}
         </div>
     );
 }

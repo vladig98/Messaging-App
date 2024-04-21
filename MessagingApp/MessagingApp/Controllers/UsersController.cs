@@ -1,5 +1,8 @@
 ﻿using MessagingApp.Dtos;
+using MessagingApp.Filters;
+using MessagingApp.Models;
 using MessagingApp.Services.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MessagingApp.Controllers
@@ -18,7 +21,8 @@ namespace MessagingApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUsers()
+        [Authorize]
+        public async Task<IActionResult> GetUsers(string jwt)
         {
             var users = await _userService.GetAllUsers();
 
@@ -26,17 +30,22 @@ namespace MessagingApp.Controllers
         }
 
         [HttpPost("/login")]
+        [CheckLoggedInFilter]
         public async Task<ActionResult> Login(LoginDto loginData)
         {
-            //prevents multiple sign ins
-            if (User.Identity.IsAuthenticated)
-            {
-                await _userService.Logout();
+            ////prevents multiple sign ins
+            //if (User.Identity.IsAuthenticated)
+            //{
+            //    _logger.LogError("User already logged in. Log in failed");
 
-                _logger.LogInformation("User logged out due to an attempt to log in again!");
+            //    var error = new ErrorDetails()
+            //    {
+            //        Message = "Already logged in!",
+            //        StatusCode = 400
+            //    };
 
-                return Ok();
-            }
+            //    return BadRequest(error);
+            //}
 
             if (!ModelState.IsValid)
             {
@@ -59,13 +68,20 @@ namespace MessagingApp.Controllers
         }
 
         [HttpPost("/register")]
+        [CheckLoggedInFilter]
         public async Task<ActionResult> Register(RegisterDto registerData)
         { 
             if (User.Identity.IsAuthenticated)
             {
                 _logger.LogInformation("User registration failed. User is logged in!");
 
-                return BadRequest("Already logged in!");
+                var error = new ErrorDetails()
+                {
+                    Message = "Already logged in!",
+                    StatusCode = 400
+                };
+
+                return BadRequest(error);
             }
 
             if (!ModelState.IsValid)

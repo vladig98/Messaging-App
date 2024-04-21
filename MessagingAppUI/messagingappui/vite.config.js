@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'node:url';
-
+import { resolve } from 'path'
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import fs from 'fs';
@@ -45,12 +45,6 @@ export default defineConfig({
         }
     },
     server: {
-        proxy: {
-            '^/weatherforecast': {
-                target: 'https://localhost:5001/',
-                secure: false
-            }
-        },
         port: 5173,
         https: {
             key: fs.readFileSync(keyFilePath),

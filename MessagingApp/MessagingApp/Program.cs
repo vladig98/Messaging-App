@@ -1,4 +1,5 @@
 using MessagingApp.Data;
+using MessagingApp.Filters;
 using MessagingApp.Middleware.ExtensionMethods;
 using MessagingApp.Models;
 using MessagingApp.Services;
@@ -6,6 +7,7 @@ using MessagingApp.Services.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
