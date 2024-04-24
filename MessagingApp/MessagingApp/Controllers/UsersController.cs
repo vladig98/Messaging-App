@@ -1,6 +1,5 @@
 ﻿using MessagingApp.Dtos;
 using MessagingApp.Filters;
-using MessagingApp.Models;
 using MessagingApp.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +19,9 @@ namespace MessagingApp.Controllers
             _userService = userService;
         }
 
-        [HttpGet]
+        [HttpGet("/getusers")]
         [Authorize]
-        public async Task<IActionResult> GetUsers(string jwt)
+        public async Task<IActionResult> GetUsers()
         {
             var users = await _userService.GetAllUsers();
 
@@ -33,20 +32,6 @@ namespace MessagingApp.Controllers
         [CheckLoggedInFilter]
         public async Task<ActionResult> Login(LoginDto loginData)
         {
-            ////prevents multiple sign ins
-            //if (User.Identity.IsAuthenticated)
-            //{
-            //    _logger.LogError("User already logged in. Log in failed");
-
-            //    var error = new ErrorDetails()
-            //    {
-            //        Message = "Already logged in!",
-            //        StatusCode = 400
-            //    };
-
-            //    return BadRequest(error);
-            //}
-
             if (!ModelState.IsValid)
             {
                 _logger.LogError("Invalid data provided for login!");
@@ -70,20 +55,7 @@ namespace MessagingApp.Controllers
         [HttpPost("/register")]
         [CheckLoggedInFilter]
         public async Task<ActionResult> Register(RegisterDto registerData)
-        { 
-            if (User.Identity.IsAuthenticated)
-            {
-                _logger.LogInformation("User registration failed. User is logged in!");
-
-                var error = new ErrorDetails()
-                {
-                    Message = "Already logged in!",
-                    StatusCode = 400
-                };
-
-                return BadRequest(error);
-            }
-
+        {
             if (!ModelState.IsValid)
             {
                 _logger.LogError("Invalid data provided for registration!");

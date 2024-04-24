@@ -3,10 +3,12 @@ using MessagingApp.Dtos;
 using MessagingApp.Enums;
 using MessagingApp.Models;
 using MessagingApp.Services.Contracts;
-using MessagingApp.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace MessagingApp.Services
 {
@@ -18,7 +20,7 @@ namespace MessagingApp.Services
         private readonly RoleManager<Role> _roleManager;
         private readonly IConfiguration _configuration;
         private readonly MessageAppDbContext _messageAppDbContext;
-        private List<string> ProfilePictures {  get; set; }
+        private List<string> ProfilePictures { get; set; }
 
         public UserService(ILogger<IUserService> logger, UserManager<User> userManager, SignInManager<User> signInManager,
             RoleManager<Role> roleManager, IConfiguration configuration, MessageAppDbContext messageAppDbContext)
@@ -39,12 +41,37 @@ namespace MessagingApp.Services
             };
         }
 
+        private async Task<string> GenerateJWTToken(User user)
+        {
+            var userClaims = await _userManager.GetClaimsAsync(user);
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString()),
+                new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
+                new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email)
+            }.Union(userClaims);
+
+            var token = new JwtSecurityToken(
+                    issuer: _configuration["MessagingApp:JWT:Issuer"],
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddMinutes(1),
+                    audience: _configuration["MessagingApp:JWT:Issuer"],
+                    signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["MessagingApp:JWT:Key"])), SecurityAlgorithms.HmacSha256)
+                );
+
+            _logger.LogInformation($"Token generated for user {user.UserName}");
+
+            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return jwt;
+        }
+
         public async Task<List<UserDto>> GetAllUsers()
         {
-            //var currentUser = await _userManager.FindByNameAsync(username);
-
-            //var messages = await _messageService.GetAllMessages(currentUser);
-
             List<UserDto> users = new List<UserDto>();
 
             var dbUsers = await _messageAppDbContext.Users.ToListAsync();
@@ -74,28 +101,15 @@ namespace MessagingApp.Services
                 return null;
             }
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, password, true);
+            var result = await _userManager.CheckPasswordAsync(user, password);
 
-            if (!result.Succeeded)
+            if (!result)
             {
                 _logger.LogError($"Invalid credentials for user {username}");
                 return null;
             }
 
-            _logger.LogInformation($"User {username} logged in.");
-
-            var token = HelperMethods.GenerateToken(user.Id, _configuration);
-
-            _logger.LogInformation($"Token generated for user {username}");
-
-            return token;
-        }
-
-        public async Task Logout()
-        {
-            await _signInManager.SignOutAsync();
-
-            _logger.LogInformation("User signed out!");
+            return await GenerateJWTToken(user);
         }
 
         public async Task<string> Register(string username, string password, string firstName, string lastName, string email)
@@ -152,6 +166,8 @@ namespace MessagingApp.Services
                 await _userManager.AddClaimAsync(user, claim: new Claim(ClaimTypes.Role.ToString(), role.Name));
                 _logger.LogInformation($"User {username} created a new account with password.");
                 _logger.LogInformation($"User {username} assigned to role {role.Name}.");
+
+                return await GenerateJWTToken(user);
             }
 
             foreach (var error in result.Errors)
@@ -159,11 +175,7 @@ namespace MessagingApp.Services
                 _logger.LogError(error.Description);
             }
 
-            var token = HelperMethods.GenerateToken(user.Id, _configuration);
-
-            _logger.LogInformation($"Token for user {username} generated!");
-
-            return token;
+            return null;
         }
     }
 }

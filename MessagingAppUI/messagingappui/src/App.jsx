@@ -6,6 +6,7 @@ import Login from './components/loginPage/loginPage.jsx';
 import Register from './components/registerPage/registerPage.jsx';
 import Home from './components/home/home.jsx';
 import { useNavigate } from 'react-router-dom';
+import Logout from './components/logout/logout';
 
 const JWTStorageName = "JWTAuthToken"
 const UsersStorageName = "UsersInfo"
@@ -42,13 +43,20 @@ function App() {
     }, []);
 
     async function getUsers() {
-        console.log(jwt)
-        const response = await fetch('https://localhost:7238/users', {
+        let token;
+
+        if (!jwt) {
+            token = localStorage.getItem(JWTStorageName)
+        } else {
+            token = jwt
+        }
+
+        const response = await fetch('https://localhost:7238/getusers', {
             method: "GET",
             mode: 'cors',
             credentials: "include",
             headers: new Headers({
-                'Authorization': 'Bearer ' + jwt,
+                'Authorization': 'Bearer ' + token,
             }), 
         });
 
@@ -61,7 +69,7 @@ function App() {
     async function updateUsers(json, data) {
         if (json) {
             data ? localStorage.setItem(UsersStorageName, data) : localStorage.removeItem(UsersStorageName);
-            data ? setUsers(data) : setUsers([]);
+            data ? setUsers(json) : setUsers([]);
         } else {
             let errors = json.errors
             let err = [];
@@ -180,6 +188,12 @@ function App() {
                         setEmail={setEmail}
                         setUserName={setUserName}
                         loggedIn={loggedIn}
+                    />
+                } />
+                <Route path="/logout" element={
+                    <Logout
+                        setJwt={setJwt}
+                        setUsers={setUsers}
                     />
                 } />
             </Routes>

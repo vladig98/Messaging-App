@@ -12,10 +12,11 @@ using System;
 using System.Reflection;
 
 [assembly: Microsoft.AspNetCore.Identity.UI.UIFrameworkAttribute("Bootstrap5")]
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("dfbb5b5b-97de-4f13-b4ff-f2dcaaae61d9")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("MessagingApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b72d72bee6e23ea5f8f2f426e7e658495cc77d0d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e7727dd86e52fe0fc609730b6f1b67db8ef09de8")]
 [assembly: System.Reflection.AssemblyProductAttribute("MessagingApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MessagingApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
