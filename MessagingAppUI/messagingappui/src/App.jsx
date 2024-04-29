@@ -1,38 +1,48 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
-import Error from './components/error/error.jsx';
 import Login from './components/loginPage/loginPage.jsx';
 import Register from './components/registerPage/registerPage.jsx';
 import Home from './components/home/home.jsx';
 import { useNavigate } from 'react-router-dom';
 import Logout from './components/logout/logout';
-
-const JWTStorageName = "JWTAuthToken"
-const UsersStorageName = "UsersInfo"
+import { useLocation } from 'react-router-dom';
+import useAuth from './hooks/useAuth.js';
+import useAPI from './hooks/useAPI.js';
+import { JWT_STORAGE_NAME, UsersStorageName, domainName, METHODS, ROUTES } from './constants';
 
 function App() {
+    const location = useLocation()
     const [userName, setUserName] = useState();
     const [password, setPassword] = useState();
     const [firstName, setFirstName] = useState();
     const [lastName, setLastName] = useState();
     const [email, setEmail] = useState();
-    const [jwt, setJwt] = useState(() => {
-        const storedJwt = localStorage.getItem(JWTStorageName);
-        return storedJwt ? storedJwt : "";
-    });
-    const [loggedIn, setLoggedIn] = useState(false)
     const [errors, setErrors] = useState([]);
     const [users, setUsers] = useState([])
     const navigate = useNavigate()
+    const { jwt, loggedIn, login, register, logout } = useAuth();
+    const { makeAnAPICall, handleResponse } = useAPI();
 
     useEffect(() => {
-        if (jwt) {
-            setLoggedIn(true)
-        } else {
+    }, [errors])
+
+    useEffect(clearState, [location]);
+
+    function clearState(clearAll = false) {
+        setUserName()
+        setPassword()
+        setFirstName()
+        setLastName()
+        setEmail()
+        setErrors([])
+        setUsers([])
+
+        if (clearAll) {
+            setJwt()
             setLoggedIn(false)
         }
-    }, [jwt]);
+    }
 
     useEffect(() => {
         const storedUsers = localStorage.getItem(UsersStorageName);
@@ -43,163 +53,84 @@ function App() {
     }, []);
 
     async function getUsers() {
-        let token;
+        const response = await makeAnAPICall(ROUTES.GETUSERS, METHODS.GET, true);
 
-        if (!jwt) {
-            token = localStorage.getItem(JWTStorageName)
-        } else {
-            token = jwt
-        }
+        let data = await handleResponse(response)
 
-        const response = await fetch('https://localhost:7238/getusers', {
-            method: "GET",
-            mode: 'cors',
-            credentials: "include",
-            headers: new Headers({
-                'Authorization': 'Bearer ' + token,
-            }), 
-        });
-
-        let data = await response.text();
-        let json = await handleResponse(data)
-
-        await updateUsers(json, data)
+        await updateUsers(data)
     }
 
-    async function updateUsers(json, data) {
-        if (json) {
-            data ? localStorage.setItem(UsersStorageName, data) : localStorage.removeItem(UsersStorageName);
-            data ? setUsers(json) : setUsers([]);
-        } else {
-            let errors = json.errors
-            let err = [];
-
-            for (let e in errors) {
-                err.push(errors[e][0])
-            }
-
-            setErrors(err)
+    async function updateUsers(data) {
+        if (typeof (data) == "object") {
+            data ? localStorage.setItem(UsersStorageName, JSON.stringify(data)) : localStorage.removeItem(UsersStorageName);
+            data ? setUsers(data) : setUsers([]);
         }
     }
 
-    async function updateJWT(json, data) {
-        if (!json) {
-            data ? localStorage.setItem(JWTStorageName, data) : localStorage.removeItem(JWTStorageName);
-            data ? setJwt(data) : setJwt();
-        } else {
-            let errors = json.errors
-            let err = [];
-
-            for (let e in errors) {
-                err.push(errors[e][0])
-            }
-
-            setErrors(err)
-        }
+    function updateErrors(errs) {
+        setErrors(prevErrors => [...prevErrors, errs]);
     }
 
-    async function handleResponse(data) {
-        let json;
+    async function handleRegister(e) {
+        e.preventDefault();
 
         try {
-            json = JSON.parse(data)
-        } catch (e) {
-
+            await register(userName, password, firstName, lastName, email);
+            await getUsers()
+            navigate('/');
+        } catch (error) {
+            console.error('Login failed:', error.message);
         }
-
-        return json;
     }
 
-    async function register(e) {
+    async function handleLogin(e) {
         e.preventDefault();
-        const response = await fetch('https://localhost:7238/register', {
-            method: "POST",
-            mode: 'cors',
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(
-                {
-                    username: userName,
-                    password: password,
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email
-                }
-            )
-        });
-        const data = await response.text();
-        let json = await handleResponse(data)
-        await updateJWT(json, data)
-        await getUsers()
 
-        navigate('/');
-    }
-
-    async function login(e) {
-        e.preventDefault();
-        const response = await fetch('https://localhost:7238/login', {
-            method: "POST",
-            mode: 'cors',
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(
-                {
-                    username: userName,
-                    password: password,
-                }
-            )
-        });
-
-        const data = await response.text();
-        let json = await handleResponse(data)
-        await updateJWT(json, data)
-        await getUsers()
-
-        navigate('/');
+        try {
+            await login(userName, password);
+            await getUsers()
+            navigate('/');
+        } catch (error) {
+            console.error('Login failed:', error.message);
+        }
     }
 
     return (
         <div>
             <Routes>
-                <Route path="/" element={
+                <Route path={ROUTES.HOME} element={
                     <Home
                         loggedIn={loggedIn}
                         users={users}
                     />
                 } />
-                <Route path="/login" element={
+                <Route path={ROUTES.LOGIN} element={
                     <Login
                         setPassword={setPassword}
                         setUserName={setUserName}
-                        login={login}
+                        login={handleLogin}
                         loggedIn={loggedIn}
+                        errors={errors}
                     />
                 } />
-                <Route path="/register" element={
+                <Route path={ROUTES.REGISTER} element={
                     <Register
-                        register={register}
+                        register={handleRegister}
                         setFirstName={setFirstName}
                         setLastName={setLastName}
                         setPassword={setPassword}
                         setEmail={setEmail}
                         setUserName={setUserName}
                         loggedIn={loggedIn}
+                        errors={errors}
                     />
                 } />
-                <Route path="/logout" element={
+                <Route path={ROUTES.LOGOUT} element={
                     <Logout
-                        setJwt={setJwt}
-                        setUsers={setUsers}
+                        clear={clearState}
                     />
                 } />
             </Routes>
-            {/*{errors.map((item, index) => (*/}
-            {/*    <Error key={index} message={item} />*/}
-            {/*))}*/}
         </div>
     );
 }

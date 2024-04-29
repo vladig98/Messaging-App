@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Logout({ setJwt, setUsers }) {
+function Logout({ clear }) {
     const navigate = useNavigate();
 
     useEffect(() => {
-        setJwt();
-        setUsers([])
+        clear(true)
         localStorage.clear();
         navigate("/", { replace: true });
     }, []);

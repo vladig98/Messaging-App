@@ -58,7 +58,7 @@ namespace MessagingApp.Services
             var token = new JwtSecurityToken(
                     issuer: _configuration["MessagingApp:JWT:Issuer"],
                     claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(1),
+                    expires: DateTime.UtcNow.AddMinutes(3600),
                     audience: _configuration["MessagingApp:JWT:Issuer"],
                     signingCredentials: new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["MessagingApp:JWT:Key"])), SecurityAlgorithms.HmacSha256)
                 );
