@@ -84,7 +84,8 @@ namespace MessagingApp.Services
                 {
                     Username = user.UserName,
                     Message = message == null ? string.Empty : (string.IsNullOrEmpty(message.Text) ? string.Empty : message.Text),
-                    Image = user.ImageURL
+                    Image = user.ImageURL,
+                    Id = user.Id
                 });
             }
 
@@ -176,6 +177,13 @@ namespace MessagingApp.Services
             }
 
             return null;
+        }
+
+        public async Task<User> GetUserInfo(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            return user;
         }
     }
 }

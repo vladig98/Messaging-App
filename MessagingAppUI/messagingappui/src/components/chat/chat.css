@@ -1,0 +1,12 @@
+.messageBoxHeight {
+    height: 80vh;
+    scrollbar-color: blue gray;
+}
+
+textarea {
+    resize: none;
+}
+
+.messageBox {
+    border-radius: 30px;
+}

@@ -11,7 +11,7 @@ function Home({ loggedIn, users }) {
             {loggedIn && (
                 <>
                     {users.map((user, index) => (
-                        <User key={index} user={user.username} message={user.message} image={user.image} />
+                        <User key={index} user={user.username} message={user.message} image={user.image} id={user.id} />
                     ))}
                 </>
             )}

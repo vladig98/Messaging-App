@@ -1,4 +1,5 @@
 ﻿using MessagingApp.Dtos;
+using MessagingApp.Models;
 
 namespace MessagingApp.Services.Contracts
 {
@@ -7,5 +8,6 @@ namespace MessagingApp.Services.Contracts
         Task<string> Login(string username, string password);
         Task<string> Register(string username, string password, string firstName, string lastName, string email);
         Task<List<UserDto>> GetAllUsers();
+        Task<User> GetUserInfo(string id);
     }
 }

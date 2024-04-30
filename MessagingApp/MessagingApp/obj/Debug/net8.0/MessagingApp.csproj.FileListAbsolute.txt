@@ -146,3 +146,5 @@ E:\Messaging-App\MessagingApp\MessagingApp\obj\Debug\net8.0\ref\MessagingApp.dll
 E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\MessagingApp.staticwebassets.runtime.json
 E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\Microsoft.AspNetCore.Identity.UI.dll
 E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\Microsoft.Extensions.FileProviders.Embedded.dll
+E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\libman.json
+E:\Messaging-App\MessagingApp\MessagingApp\bin\Debug\net8.0\lib\microsoft\signalr\package.json

@@ -1,6 +1,7 @@
 import './user.css'
+import { Link } from 'react-router-dom';
 
-function User({ user, message, image }) {
+function User({ user, message, image, id }) {
     return (
         <div className={"card mb-3 mx-auto"} style={{ maxWidth: "540px" }}>
             <div className="row g-0">
@@ -12,7 +13,9 @@ function User({ user, message, image }) {
                         <h5 className="card-title">{user}</h5>
                         <p className="card-text">{message}</p>
                         <div className={"text-end"}>
-                            <button className={"btn btn-primary"}>Chat now</button>
+                            <Link to={'chat/' + id}>
+                                <button className={"btn btn-primary"}>Chat now</button>
+                            </Link>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 using MessagingApp.Data;
+using MessagingApp.Hubs;
 using MessagingApp.Middleware.ExtensionMethods;
 using MessagingApp.Models;
 using MessagingApp.Services;
@@ -34,14 +35,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
      };
  });
 
-//IdentityModelEventSource.ShowPII = true;
-
-// Add services to the container.
+builder.Services.AddSignalR();
 
 builder.Services.AddTransient<IUserService, UserService>();
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 var connectionString = builder.Configuration["MessagingApp:ConnectionString"] ??
         throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -81,7 +79,6 @@ builder.Services.AddSwaggerGen(cfg =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -98,5 +95,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<UserHub>("/getuserinfo");
 
 app.Run();

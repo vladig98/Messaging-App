@@ -9,7 +9,9 @@ import Logout from './components/logout/logout';
 import { useLocation } from 'react-router-dom';
 import useAuth from './hooks/useAuth.js';
 import useAPI from './hooks/useAPI.js';
+import Chat from './components/chat/chat.jsx'
 import { JWT_STORAGE_NAME, UsersStorageName, domainName, METHODS, ROUTES } from './constants';
+import User from './components/user/user';
 
 function App() {
     const location = useLocation()
@@ -130,6 +132,7 @@ function App() {
                         clear={clearState}
                     />
                 } />
+                <Route exact path={ROUTES.CHAT_ID} element={<Chat />} />
             </Routes>
         </div>
     );

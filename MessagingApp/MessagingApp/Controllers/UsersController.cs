@@ -19,6 +19,27 @@ namespace MessagingApp.Controllers
             _userService = userService;
         }
 
+        //[HttpPost("/getuserinfo")]
+        //[Authorize]
+        //public async Task<IActionResult> GetUserInfo(UserInfoDto data)
+        //{
+        //    var user = await _userService.GetUserInfo(data.Id);
+
+        //    if (user == null)
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    var userDto = new UserDto()
+        //    {
+        //        Id = user.Id,
+        //        Image = user.ImageURL,
+        //        Username = user.UserName
+        //    };
+
+        //    return Ok(userDto);
+        //}
+
         [HttpGet("/getusers")]
         [Authorize]
         public async Task<IActionResult> GetUsers()
