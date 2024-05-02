@@ -1,6 +1,6 @@
 ﻿using MessagingApp.Dtos;
 using MessagingApp.Services.Contracts;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace MessagingApp.Hubs
@@ -14,6 +14,7 @@ namespace MessagingApp.Hubs
             _userService = userService;
         }
 
+        [Authorize]
         public async Task GetUserInfo(UserInfoDto data)
         {
             var user = await _userService.GetUserInfo(data.Id);

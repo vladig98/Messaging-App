@@ -20,16 +20,15 @@ function App() {
     const [firstName, setFirstName] = useState();
     const [lastName, setLastName] = useState();
     const [email, setEmail] = useState();
-    const [errors, setErrors] = useState([]);
     const [users, setUsers] = useState([])
     const navigate = useNavigate()
     const { jwt, loggedIn, login, register, logout } = useAuth();
     const { makeAnAPICall, handleResponse } = useAPI();
 
     useEffect(() => {
-    }, [errors])
-
-    useEffect(clearState, [location]);
+        clearState()
+        getUsers()
+    }, [location]);
 
     function clearState(clearAll = false) {
         setUserName()
@@ -37,7 +36,6 @@ function App() {
         setFirstName()
         setLastName()
         setEmail()
-        setErrors([])
         setUsers([])
 
         if (clearAll) {
@@ -47,11 +45,7 @@ function App() {
     }
 
     useEffect(() => {
-        const storedUsers = localStorage.getItem(UsersStorageName);
-        if (storedUsers !== null) {
-            const parsedUsers = JSON.parse(storedUsers);
-            setUsers(parsedUsers);
-        }
+        getUsers()
     }, []);
 
     async function getUsers() {
@@ -67,10 +61,6 @@ function App() {
             data ? localStorage.setItem(UsersStorageName, JSON.stringify(data)) : localStorage.removeItem(UsersStorageName);
             data ? setUsers(data) : setUsers([]);
         }
-    }
-
-    function updateErrors(errs) {
-        setErrors(prevErrors => [...prevErrors, errs]);
     }
 
     async function handleRegister(e) {
@@ -112,7 +102,6 @@ function App() {
                         setUserName={setUserName}
                         login={handleLogin}
                         loggedIn={loggedIn}
-                        errors={errors}
                     />
                 } />
                 <Route path={ROUTES.REGISTER} element={
@@ -124,7 +113,6 @@ function App() {
                         setEmail={setEmail}
                         setUserName={setUserName}
                         loggedIn={loggedIn}
-                        errors={errors}
                     />
                 } />
                 <Route path={ROUTES.LOGOUT} element={

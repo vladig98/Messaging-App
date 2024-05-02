@@ -12,5 +12,6 @@ export const ROUTES = {
     LOGOUT: '/logout',
     GETUSERS: '/getusers',
     CHAT_ID: '/chat/:id',
-    GETUSERINFO: '/getuserinfo'
+    GETUSERINFO: '/getuserinfo',
+    GETCHATINFO: '/getchatinfo'
 };

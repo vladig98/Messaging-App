@@ -70,7 +70,7 @@ namespace MessagingApp.Services
             return jwt;
         }
 
-        public async Task<List<UserDto>> GetAllUsers()
+        public async Task<List<UserDto>> GetAllUsers(string email)
         {
             List<UserDto> users = new List<UserDto>();
 
@@ -78,7 +78,13 @@ namespace MessagingApp.Services
 
             foreach (var user in dbUsers)
             {
-                var message = await _messageAppDbContext.Messages.FirstOrDefaultAsync(m => m.UserId == user.Id);
+                //skips the current user
+                if (user.Email == email)
+                {
+                    continue;
+                }
+
+                var message = await _messageAppDbContext.Messages.Where(m => m.UserId == user.Id).OrderBy(x => x.Time).LastOrDefaultAsync();
 
                 users.Add(new UserDto
                 {
@@ -184,6 +190,16 @@ namespace MessagingApp.Services
             var user = await _userManager.FindByIdAsync(id);
 
             return user;
+        }
+
+        public async Task<User> GetUserByEmail(string email)
+        {
+            return await _userManager.FindByEmailAsync(email);
+        }
+
+        public async Task<User> GetUserById(string id)
+        {
+            return await _userManager.FindByIdAsync(id);
         }
     }
 }

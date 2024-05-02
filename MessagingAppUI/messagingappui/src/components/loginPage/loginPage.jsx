@@ -1,16 +1,12 @@
 import Navbar from '../../components/navbar/navbar.jsx';
-import Error from '../../components/error/error.jsx'
 
-function Login({ setUserName, setPassword, login, loggedIn, errors }) {
+function Login({ setUserName, setPassword, login, loggedIn }) {
     return (
         <>
             <Navbar
                 loggedIn={loggedIn}
             />
             <h1 className="mx-auto w-50 text-center mt-3">Login</h1>
-            {errors.map((item, index) => (
-                <Error key={index} message={item} />
-            ))}
             <form onSubmit={login} className={"w-50 mx-auto mt-5 text-end"}>
                 <div className={"form-floating mb-3"}>
                     <input placeholder={"Login name"} id={"loginLoginname"} className={"form-control"} type="text" onChange={e => setUserName(e.target.value)} />

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Text.Json.Serialization;
 
 namespace MessagingApp.Models
 {
@@ -16,7 +17,9 @@ namespace MessagingApp.Models
         public string FirstName { get; set; }
         public string LastName { get; set; }
 
+        [JsonIgnore]
         public List<Chat> ReceiverChats { get; set; }
+        [JsonIgnore]
         public List<Chat> SenderChats { get; set; }
 
         public string ImageURL { get; set; }

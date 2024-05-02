@@ -1,16 +1,12 @@
 import Navbar from '../../components/navbar/navbar.jsx';
-import Error from '../../components/error/error.jsx'
 
-function Register({ setFirstName, setLastName, setPassword, setEmail, setUserName, register, loggedIn, errors }) {
+function Register({ setFirstName, setLastName, setPassword, setEmail, setUserName, register, loggedIn }) {
     return (
         <>
             <Navbar
                 loggedIn={loggedIn}
             />
             <h1 className="mx-auto w-50 text-center mt-3">Register</h1>
-            {errors.map((item, index) => (
-                <Error key={index} message={item} />
-            ))}
             <form onSubmit={register} className={"w-50 mx-auto mt-5 text-end"}>
                 <div className={"form-floating mb-3"}>
                     <input placeholder={"First name"} id={"registerFirstName"} className={"form-control"} type="text" onChange={e => setFirstName(e.target.value)} />

@@ -10,3 +10,11 @@ textarea {
 .messageBox {
     border-radius: 30px;
 }
+
+.chatHeaderImage {
+    aspect-ratio: 1/1;
+    width: 2.5rem;
+    margin-right: 1rem;
+    border: 2px solid white;
+    border-radius: 50%;
+}

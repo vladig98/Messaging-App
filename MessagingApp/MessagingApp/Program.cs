@@ -33,11 +33,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
          ClockSkew = TimeSpan.Zero
      };
+
+     //adds authentication to SignalR
+     options.Events = new JwtBearerEvents
+     {
+         OnMessageReceived = context =>
+         {
+             var accessToken = context.Request.Query["access_token"];
+
+             // If the request is for our hub...
+             var path = context.HttpContext.Request.Path;
+             if (!string.IsNullOrEmpty(accessToken) &&
+                 ((path.StartsWithSegments("/getuserinfo")) ||
+                 (path.StartsWithSegments("/getchatinfo"))))
+             {
+                 // Read the token out of the query string
+                 context.Token = accessToken;
+             }
+             return Task.CompletedTask;
+         }
+     };
  });
 
 builder.Services.AddSignalR();
 
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IChatService, ChatService>();
 
 builder.Services.AddControllers();
 
@@ -96,5 +117,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<UserHub>("/getuserinfo");
+app.MapHub<ChatHub>("/getchatinfo");
 
 app.Run();

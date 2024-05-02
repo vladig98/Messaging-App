@@ -1,63 +1,77 @@
 import { useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 import './chat.css'
-import { domainName, ROUTES } from '../../constants.js';
-import { HubConnectionBuilder } from '@microsoft/signalr';
+import { invokeSignalR } from '../../invokeSignalR';
+import { useState, useEffect } from 'react';
+import { ROUTES } from '../../constants.js';
 
 function Chat() {
     let { id } = useParams();
-    const [message, setMessage] = useState()
-    const [username, setUsername] = useState('')
-
-    const connection = new HubConnectionBuilder()
-        .withUrl(`${domainName}${ROUTES.GETUSERINFO}`)
-        .build();
+    const [message, setMessage] = useState('')
+    const [chat, setChat] = useState(null)
+    const [messages, setMessages] = useState([])
+    const [chatId, setChatId] = useState('')
 
     useEffect(() => {
-        sendMessage()
+        fetchChat();
     }, []);
 
-    async function sendMessage() {
-        await connection.start()
-            .then(() => console.log('Connected to SignalR hub'))
-            .catch(err => console.error('Error connecting to hub:', err));
-
-        await connection.invoke("GetUserInfo", JSON.parse(JSON.stringify({ id })));
+    async function fetchChat() {
+        try {
+            const result = await invokeSignalR(ROUTES.GETCHATINFO, 'GetChatInfo', 'ReceiveChatInfo', true, { id });
+            setChat(result);
+            setMessages(result.messages)
+            setChatId(result.id)
+        } catch (error) {
+            console.log("error", error)
+        }
     }
 
-    connection.on('ReceiveUserInfo', user => {
-        setUsername(user.username)
-    });
+    async function sendMessage() {
+        try {
+            const result = await invokeSignalR(ROUTES.GETCHATINFO, 'SendMessage', 'MessageReceived', true, { "text": message, chatId });
+            setMessage('')
+            fetchChat()
+        } catch (error) {
+            console.log("error", error)
+        }
+    }
 
     return (
         <div className={"container-lg mt-3 w-50"}>
             <div className={"bg-primary text-white p-2 px-3 rounded-top"}>
-                You're chatting with {username}
+                {chat && (
+                    <>
+                        <img className={"chatHeaderImage"} src={chat.receiver.image} />You're chatting with {chat.receiver.username}
+                    </>
+                )}
             </div>
-            <div className={"border border-primary messageBoxHeight overflow-y-scroll pt-2"}>
-                <div className={"d-flex justify-content-start mx-3 m-1"}>
-                    <span className={"w-50 bg-secondary text-white p-2 px-3 border messageBox text-start"}>
-                        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-                    </span>
-                </div>
-                <div className={"d-flex justify-content-start mx-3 m-1"}>
-                    <span className={"w-50 bg-secondary text-white p-2 px-3 border messageBox text-start"}>
-                        Message 2
-                    </span>
-                </div>
-                <div className={"d-flex justify-content-end mx-3 m-1"}>
-                    <span className={"w-50 bg-primary text-white p-2 px-3 border messageBox text-end"}>
-                        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-                    </span>
-                </div>
-                <div className={"d-flex justify-content-end mx-3 m-1"}>
-                    <span className={"w-50 bg-primary text-white p-2 px-3 border messageBox text-end"}>
-                        Message 2
-                    </span>
-                </div>
+            <div className={"border border-primary messageBoxHeight overflow-y-scroll pt-2 d-flex flex-column-reverse"}>
+                {messages && chat && [...messages].reverse().map((m, index) => {
+                    if (m.userId == chat.receiverId) {
+                        return (
+                            <div key={index} className={"d-flex justify-content-start mx-3 m-1"}>
+                                <span className={"w-50 d-flex flex justify-content-start"}>
+                                    <span className={"bg-secondary text-white p-2 px-3 border messageBox text-start"}>
+                                        {m.text}
+                                    </span>
+                                </span>
+                            </div>
+                        )
+                    } else {
+                        return (
+                            <div key={index} className={"d-flex justify-content-end mx-3 m-1"}>
+                                <span className={"w-50 d-flex justify-content-end"}>
+                                    <span className={"bg-primary text-white p-2 px-3 border messageBox text-end"}>
+                                        {m.text}
+                                    </span>
+                                </span>
+                            </div>
+                        )
+                    }
+                })}
             </div>
             <div className={"d-flex"}>
-                <textarea className={"w-100 overflow-y-scroll"} onChange={e => setMessage(e.target.value)}></textarea>
+                <textarea className={"w-100 overflow-y-scroll"} value={message} onChange={e => setMessage(e.target.value)}></textarea>
             </div>
             <div>
                 <button className={"rounded-bottom bg-primary text-white w-100 p-2"} onClick={sendMessage}>Send</button>

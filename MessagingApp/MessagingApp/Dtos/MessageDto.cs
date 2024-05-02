@@ -1,14 +1,12 @@
-﻿namespace MessagingApp.Models
+﻿using MessagingApp.Models;
+
+namespace MessagingApp.Dtos
 {
-    public class Message
+    public class MessageDto
     {
         public string Id { get; set; }
         public string Text { get; set; }
-        public User User { get; set; }
         public string UserId { get; set; }
-
-        public Chat Chat { get; set; }
         public string ChatId { get; set; }
-        public DateTime Time { get; set; }
     }
 }

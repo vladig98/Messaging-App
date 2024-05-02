@@ -3,6 +3,8 @@ using MessagingApp.Filters;
 using MessagingApp.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace MessagingApp.Controllers
 {
@@ -19,32 +21,18 @@ namespace MessagingApp.Controllers
             _userService = userService;
         }
 
-        //[HttpPost("/getuserinfo")]
-        //[Authorize]
-        //public async Task<IActionResult> GetUserInfo(UserInfoDto data)
-        //{
-        //    var user = await _userService.GetUserInfo(data.Id);
-
-        //    if (user == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    var userDto = new UserDto()
-        //    {
-        //        Id = user.Id,
-        //        Image = user.ImageURL,
-        //        Username = user.UserName
-        //    };
-
-        //    return Ok(userDto);
-        //}
-
         [HttpGet("/getusers")]
         [Authorize]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _userService.GetAllUsers();
+            var token = Request.Headers[HeaderNames.Authorization].ToString().Replace("Bearer ", "");
+            var handler = new JwtSecurityTokenHandler();
+            var jsonToken = handler.ReadToken(token);
+            var tokenS = jsonToken as JwtSecurityToken;
+
+            var email = tokenS.Claims.First(claim => claim.Type == "email").Value;
+
+            var users = await _userService.GetAllUsers(email);
 
             return Ok(users);
         }
