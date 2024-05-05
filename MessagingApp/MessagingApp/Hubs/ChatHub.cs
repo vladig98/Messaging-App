@@ -1,10 +1,7 @@
 ﻿using MessagingApp.Dtos;
-using MessagingApp.Models;
-using MessagingApp.Services;
 using MessagingApp.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace MessagingApp.Hubs
@@ -47,17 +44,13 @@ namespace MessagingApp.Hubs
 
             var chat = await _chatService.GetChatInfo(userId, data.Id);
 
+            //await Clients.Client(Context.ConnectionId).SendAsync("ReceiveChatInfo", chat);
             await Clients.All.SendAsync("ReceiveChatInfo", chat);
         }
 
         [Authorize]
         public async Task SendMessage(MessageDto message)
         {
-            var context = Context;
-            var client = Clients.All;
-
-            
-
             var email = ExtractEmailFromJWT(Context);
             string userId = await ExtractUserIdWithEmail(email);
 

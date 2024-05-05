@@ -1,6 +1,4 @@
-﻿using MessagingApp.Models;
-
-namespace MessagingApp.Dtos
+﻿namespace MessagingApp.Dtos
 {
     public class ChatDto
     {
@@ -19,5 +17,5 @@ namespace MessagingApp.Dtos
         public UserDto Receiver { get; set; }
 
         public List<MessageDto> Messages { get; set; }
-}
+    }
 }

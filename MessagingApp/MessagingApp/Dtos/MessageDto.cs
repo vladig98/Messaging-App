@@ -1,6 +1,4 @@
-﻿using MessagingApp.Models;
-
-namespace MessagingApp.Dtos
+﻿namespace MessagingApp.Dtos
 {
     public class MessageDto
     {

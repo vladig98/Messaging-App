@@ -1,27 +1,46 @@
 import { domainName, JWT_STORAGE_NAME } from './constants.js';
 import { HubConnectionBuilder } from '@microsoft/signalr';
 
-export function invokeSignalR(hubURL, invocationFunction, callbackFunction, authenticate = false, params = {}) {
-    return new Promise((resolve, reject) => {
-        const jwt = localStorage.getItem(JWT_STORAGE_NAME);
-        const options = authenticate ? { accessTokenFactory: () => jwt } : {};
+export async function invokeSignalR(hubURL, invocationFunction, callbackFunction, authenticate = false, params = {}, existingConnection = null) {
+    const jwt = localStorage.getItem(JWT_STORAGE_NAME);
+    const options = authenticate ? { accessTokenFactory: () => jwt } : {};
 
-        const connection = new HubConnectionBuilder()
-            .withUrl(`${domainName}${hubURL}`, options)
-            .build();
+    const conn = existingConnection ? existingConnection : new HubConnectionBuilder()
+        .withUrl(`${domainName}${hubURL}`, options)
+        .build();
 
-        connection.on(callbackFunction, data => {
+    const promise = new Promise((resolve, reject) => {
+        conn.on(callbackFunction, data => {
             resolve(data);
         });
 
-        connection.start()
-            .then(() => {
-                return connection.invoke(invocationFunction, params);
-            })
-            .catch(error => {
-                console.error('Error connecting to hub:', error);
-                connection.stop();
-                reject(error);
-            });
+        if (conn.state == 'Disconnected') {
+            conn.start()
+                .then(() => {
+                    conn.invoke(invocationFunction, params)
+                        .then(result => {
+                            resolve(result);
+                        })
+                        .catch(error => {
+                            console.error('Error invoking SignalR function:', error);
+                            reject(error);
+                        });
+                })
+                .catch(error => {
+                    console.error('Error starting SignalR connection:', error);
+                    reject(error);
+                });
+        } else {
+            conn.invoke(invocationFunction, params)
+                .then(result => {
+                    resolve(result);
+                })
+                .catch(error => {
+                    console.error('Error invoking SignalR function:', error);
+                    reject(error);
+                });
+        }
     });
+
+    return { conn, promise };
 }

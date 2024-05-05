@@ -10,27 +10,43 @@ function Chat() {
     const [chat, setChat] = useState(null)
     const [messages, setMessages] = useState([])
     const [chatId, setChatId] = useState('')
+    const [connection, setConnection] = useState('')
 
     useEffect(() => {
         fetchChat();
     }, []);
 
+
     async function fetchChat() {
         try {
-            const result = await invokeSignalR(ROUTES.GETCHATINFO, 'GetChatInfo', 'ReceiveChatInfo', true, { id });
-            setChat(result);
-            setMessages(result.messages)
-            setChatId(result.id)
+            let cnn = connection ? connection : null
+            const { conn, promise } = await invokeSignalR(ROUTES.GETCHATINFO, 'GetChatInfo', 'ReceiveChatInfo', true, { id }, cnn);
+            const data = await Promise.resolve(promise);
+            setChat(data);
+            setConnection(conn)
+            setMessages(data.messages)
+            setChatId(data.id)
         } catch (error) {
             console.log("error", error)
         }
     }
 
+    useEffect(() => {
+        if (connection) {
+            connection.on("MessageReceived", data => {
+                fetchChat()
+            })
+        }
+    }, [connection])
+
     async function sendMessage() {
         try {
-            const result = await invokeSignalR(ROUTES.GETCHATINFO, 'SendMessage', 'MessageReceived', true, { "text": message, chatId });
+            let cnn = connection ? connection : null
+            const { conn, promise } = await invokeSignalR(ROUTES.GETCHATINFO, 'SendMessage', 'MessageReceived', true, { "text": message, chatId }, cnn);
+            const data = await Promise.resolve(promise);
+            setConnection(conn)
             setMessage('')
-            fetchChat()
+            await fetchChat()
         } catch (error) {
             console.log("error", error)
         }

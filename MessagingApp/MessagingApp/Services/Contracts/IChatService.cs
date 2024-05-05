@@ -1,5 +1,4 @@
 ﻿using MessagingApp.Dtos;
-using MessagingApp.Models;
 
 namespace MessagingApp.Services.Contracts
 {
