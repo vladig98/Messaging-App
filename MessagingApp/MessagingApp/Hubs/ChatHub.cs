@@ -44,8 +44,8 @@ namespace MessagingApp.Hubs
 
             var chat = await _chatService.GetChatInfo(userId, data.Id);
 
-            //await Clients.Client(Context.ConnectionId).SendAsync("ReceiveChatInfo", chat);
-            await Clients.All.SendAsync("ReceiveChatInfo", chat);
+            await Clients.Client(Context.ConnectionId).SendAsync("ReceiveChatInfo", chat);
+            //await Clients.All.SendAsync("ReceiveChatInfo", chat);
         }
 
         [Authorize]

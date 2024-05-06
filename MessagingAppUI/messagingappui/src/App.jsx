@@ -11,7 +11,6 @@ import useAuth from './hooks/useAuth.js';
 import useAPI from './hooks/useAPI.js';
 import Chat from './components/chat/chat.jsx'
 import { JWT_STORAGE_NAME, UsersStorageName, domainName, METHODS, ROUTES } from './constants';
-import User from './components/user/user';
 
 function App() {
     const location = useLocation()
@@ -22,14 +21,19 @@ function App() {
     const [email, setEmail] = useState();
     const [users, setUsers] = useState([])
     const navigate = useNavigate()
-    const { jwt, loggedIn, login, register, logout } = useAuth();
+    const { jwt, clearAuthstate, loggedIn, login, register, logout } = useAuth();
     const { makeAnAPICall, handleResponse } = useAPI();
 
+    //clears all or some of the hooks on a page change
+    //retrieves the users
     useEffect(() => {
         clearState()
-        getUsers()
+        collectUsersInfo()
     }, [location]);
 
+    //clears the hooks
+    //clears all if true is passed
+    //if nothing is passed, the token remains
     function clearState(clearAll = false) {
         setUserName()
         setPassword()
@@ -39,16 +43,31 @@ function App() {
         setUsers([])
 
         if (clearAll) {
-            setJwt()
-            setLoggedIn(false)
+            clearAuthstate()
         }
     }
 
+    //checks if the user is authenticated
+    //uses the local storage to fix an issue with a race condition on the hook state update
+    function isLoggedIn() {
+        return loggedIn && localStorage.getItem(JWT_STORAGE_NAME)
+    }
+
+    //collects the users info with an API call
+    function collectUsersInfo() {
+        if (isLoggedIn()) {
+            getUsers();
+        }
+    }
+
+    //gets the users on page load
     useEffect(() => {
-        getUsers()
+        collectUsersInfo()
     }, []);
 
+    //gets the users
     async function getUsers() {
+        //makes an api call to get the users and stores them in the hook
         const response = await makeAnAPICall(ROUTES.GETUSERS, METHODS.GET, true);
 
         let data = await handleResponse(response)
@@ -56,13 +75,21 @@ function App() {
         await updateUsers(data)
     }
 
+    //check if the response data is in JSON format
+    function isDataInJSONFormat(data) {
+        return typeof (data) == "object"
+    }
+
+    //sets the users in localStorage and in a hook
     async function updateUsers(data) {
-        if (typeof (data) == "object") {
+        //the users data will be in JSON format
+        if (isDataInJSONFormat(data)) {
             data ? localStorage.setItem(UsersStorageName, JSON.stringify(data)) : localStorage.removeItem(UsersStorageName);
             data ? setUsers(data) : setUsers([]);
         }
     }
 
+    //handles the registration logic
     async function handleRegister(e) {
         e.preventDefault();
 
@@ -75,6 +102,7 @@ function App() {
         }
     }
 
+    //handles the login logic
     async function handleLogin(e) {
         e.preventDefault();
 
@@ -120,7 +148,7 @@ function App() {
                         clear={clearState}
                     />
                 } />
-                <Route exact path={ROUTES.CHAT_ID} element={<Chat />} />
+                <Route exact path={ROUTES.CHAT_ID} element={<Chat loggedIn={loggedIn} />} />
             </Routes>
         </div>
     );

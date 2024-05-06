@@ -1,4 +1,8 @@
+:root{
+    --userImageWidth: 100px;
+}
+
 img {
-    width: 100px;
+    width: var(--userImageWidth);
     aspect-ratio: 1/1;
 }
