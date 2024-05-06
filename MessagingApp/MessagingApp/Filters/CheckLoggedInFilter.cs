@@ -6,9 +6,10 @@ namespace MessagingApp.Filters
 {
     public class CheckLoggedInFilter : ActionFilterAttribute
     {
+        //check if the user is already logged in and prevents another log in
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            if (context.HttpContext.User.Identity.IsAuthenticated)
+            if (IsUserAuthenticated(context))
             {
                 var error = new ErrorDetails()
                 {
@@ -19,5 +20,11 @@ namespace MessagingApp.Filters
                 context.Result = new BadRequestObjectResult(error);
             }
         }
-    }
+
+        //check if the user is Authenticated
+        private bool IsUserAuthenticated(ActionExecutingContext context)
+        {
+            return context.HttpContext.User.Identity.IsAuthenticated;
+        }
+     }
 }

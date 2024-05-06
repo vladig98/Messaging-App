@@ -10,11 +10,13 @@ namespace MessagingApp.Services
     {
         private readonly MessageAppDbContext _context;
         private readonly IUserService _userService;
+        private readonly ILogger<ChatService> _logger;
 
-        public ChatService(MessageAppDbContext context, IUserService userService)
+        public ChatService(MessageAppDbContext context, IUserService userService, ILogger<ChatService> logger)
         {
             _context = context;
             _userService = userService;
+            _logger = logger;
         }
 
         public async Task<ChatDto> GetChatInfo(string senderId, string receiverId)

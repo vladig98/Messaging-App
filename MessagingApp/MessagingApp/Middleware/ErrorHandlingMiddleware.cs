@@ -29,9 +29,10 @@ namespace MessagingApp.Middleware
             }
         }
 
-        //handle any exception that many occur
+        //handle any exception that may occur
         private async Task HandleExceptionAsync(HttpContext context, Exception ex)
         {
+            //returns a 500 error on a failure
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 

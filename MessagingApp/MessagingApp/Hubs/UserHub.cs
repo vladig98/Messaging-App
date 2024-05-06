@@ -8,25 +8,34 @@ namespace MessagingApp.Hubs
     public class UserHub : Hub
     {
         private readonly IUserService _userService;
+        private readonly ILogger<UserHub> _logger;
 
-        public UserHub(IUserService userService)
+        public UserHub(IUserService userService, ILogger<UserHub> logger)
         {
             _userService = userService;
+            _logger = logger;
         }
 
+        //gets user's information
         [Authorize]
         public async Task GetUserInfo(UserInfoDto data)
         {
+            //gets the user that is chatting with me
             var user = await _userService.GetUserInfo(data.Id);
 
-            var userDto = user == null ? null : new UserDto()
+            _logger.LogInformation($"User {user.UserName} retrieved successfully!");
+
+            //generates the JSON response
+            var userDto = user != null ? new UserDto()
             {
                 Id = user.Id,
                 Image = user.ImageURL,
                 Username = user.UserName
-            };
+            } : null;
 
-            await Clients.All.SendAsync("ReceiveUserInfo", userDto);
+            _logger.LogInformation("Sending user data to the signalR client.");
+            //sends back to the client
+            await Clients.Client(Context.ConnectionId).SendAsync("ReceiveUserInfo", userDto);
         }
     }
 }

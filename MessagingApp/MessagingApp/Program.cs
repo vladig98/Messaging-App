@@ -2,22 +2,31 @@ using MessagingApp.Data;
 using MessagingApp.Hubs;
 using MessagingApp.Middleware.ExtensionMethods;
 using MessagingApp.Models;
-using MessagingApp.Services;
 using MessagingApp.Services.Contracts;
+using MessagingApp.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var jwtIssuer = builder.Configuration["MessagingApp:JWT:Issuer"];
 var jwtKey = builder.Configuration["MessagingApp:JWT:Key"];
 
+// Service Registration
 builder.Services.AddIdentityCore<User>().AddSignInManager().AddRoles<Role>().AddEntityFrameworkStores<MessageAppDbContext>().AddDefaultTokenProviders();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IChatService, ChatService>();
 
+// Database Context Setup
+var connectionString = builder.Configuration["MessagingApp:ConnectionString"] ??
+        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+builder.Services.AddDbContext<MessageAppDbContext>(options => options.UseSqlServer(connectionString));
+
+// Authentication and Authorization Setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
  .AddJwtBearer(options =>
  {
@@ -37,15 +46,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
      //adds authentication to SignalR
      options.Events = new JwtBearerEvents
      {
-         OnMessageReceived = context =>
-         {
+         OnMessageReceived = context => {
              var accessToken = context.Request.Query["access_token"];
 
              // If the request is for our hub...
              var path = context.HttpContext.Request.Path;
              if (!string.IsNullOrEmpty(accessToken) &&
                  ((path.StartsWithSegments("/getuserinfo")) ||
-                 (path.StartsWithSegments("/getchatinfo"))))
+                     (path.StartsWithSegments("/getchatinfo"))))
              {
                  // Read the token out of the query string
                  context.Token = accessToken;
@@ -54,22 +62,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
          }
      };
  });
+builder.Services.AddAuthorization();
 
+// Middleware Setup
+builder.Services.AddCors();
 builder.Services.AddSignalR();
-
-builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddTransient<IChatService, ChatService>();
-
 builder.Services.AddControllers();
-
-var connectionString = builder.Configuration["MessagingApp:ConnectionString"] ??
-        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
-builder.Services.AddDbContext<MessageAppDbContext>(options => options.UseSqlServer(connectionString));
-
 builder.Services.AddEndpointsApiExplorer();
-
-//adds Authorization header for Swagger UI
 builder.Services.AddSwaggerGen(cfg =>
 {
     cfg.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -85,36 +84,37 @@ builder.Services.AddSwaggerGen(cfg =>
     cfg.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme
+        new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
+        Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+        Type = ReferenceType.SecurityScheme,
+        Id = "Bearer"
+    }
             },
-            new string[] {}
+    new string[] {}
         }
     });
 });
 
+// Application Setup
 var app = builder.Build();
 
+// Development specific configurations
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Middleware registration
 app.UseErrorHandlingMiddleware();
-
 app.UseHttpsRedirection();
-
 app.UseCors(x => x.AllowAnyMethod().AllowAnyHeader().SetIsOriginAllowed(origin => true).AllowCredentials());
-
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Endpoint mapping
 app.MapControllers();
 app.MapHub<UserHub>("/getuserinfo");
 app.MapHub<ChatHub>("/getchatinfo");
