@@ -22,7 +22,7 @@ builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IChatService, ChatService>();
 
 // Database Context Setup
-var connectionString = builder.Configuration["ConnectionStrings:AZURE_MYSQL_CONNECTIONSTRING"] ??
+var connectionString = builder.Configuration["MessagingApp:ConnectionString"] ??
         throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<MessageAppDbContext>(options => options.UseSqlServer(connectionString));
 
