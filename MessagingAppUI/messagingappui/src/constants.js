@@ -1,6 +1,6 @@
 export const JWT_STORAGE_NAME = "JWTAuthToken";
 export const UsersStorageName = "UsersInfo";
-export const domainName = "https://localhost:7238";
+export const domainName = "https://messagingapp20240507202118.azurewebsites.net";
 export const METHODS = {
     GET: "GET",
     POST: "POST"

@@ -1,0 +1,29 @@
+:root {
+    --chatWindowHeight: 70vh;
+    --scrollbarColor: blue gray;
+    --messageBoxBorderRadius: 30px;
+    --headerImageWidth: 2.5rem;
+    --headerImageBorderRadius: 50%;
+    --headerImageBorder: 2px solid white;
+}
+
+.messageBoxHeight {
+    height: var(--chatWindowHeight);
+    scrollbar-color: var(--scrollbarColor);
+}
+
+textarea {
+    resize: none;
+}
+
+.messageBox {
+    border-radius: var(--messageBoxBorderRadius);
+}
+
+.chatHeaderImage {
+    aspect-ratio: 1/1;
+    width: var(--headerImageWidth);
+    margin-right: 1rem;
+    border: var(--headerImageBorder);
+    border-radius: var(--headerImageBorderRadius);
+}
