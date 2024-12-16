@@ -24,7 +24,10 @@ builder.Services.AddTransient<IChatService, ChatService>();
 // Database Context Setup
 var connectionString = builder.Configuration["ConnectionStrings:AZURE_SQL_CONNECTIONSTRING"] ??
         throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<MessageAppDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<MessageAppDbContext>(options => options.UseSqlServer(connectionString, b =>
+{
+    b.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+}));
 
 // Authentication and Authorization Setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
