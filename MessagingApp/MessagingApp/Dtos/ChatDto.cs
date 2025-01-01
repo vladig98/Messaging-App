@@ -6,17 +6,9 @@
     public class ChatDto
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChatDto"/> class.
-        /// </summary>
-        public ChatDto()
-        {
-            Messages = new List<MessageDto>();
-        }
-
-        /// <summary>
         /// Gets or sets the ID of the chat.
         /// </summary>
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
         /// <summary>
         /// Gets or sets the start date of the chat.
         /// </summary>
@@ -24,22 +16,22 @@
         /// <summary>
         /// Gets or sets the ID of the sender user.
         /// </summary>
-        public string SenderId { get; set; }
+        public string SenderId { get; set; } = string.Empty;
         /// <summary>
         /// Gets or sets the sender user DTO.
         /// </summary>
-        public UserDto Sender { get; set; }
+        public UserDto Sender { get; set; } = new();
         // <summary>
         /// Gets or sets the ID of the receiver user.
         /// </summary>
-        public string ReceiverId { get; set; }
+        public string ReceiverId { get; set; } = string.Empty;
         /// <summary>
         /// Gets or sets the receiver user DTO.
         /// </summary>
-        public UserDto Receiver { get; set; }
+        public UserDto Receiver { get; set; } = new();
         /// <summary>
         /// Gets or sets the list of messages in the chat.
         /// </summary>
-        public List<MessageDto> Messages { get; set; }
+        public List<MessageDto> Messages { get; set; } = [];
     }
 }

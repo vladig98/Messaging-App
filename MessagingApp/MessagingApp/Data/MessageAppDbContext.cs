@@ -21,7 +21,6 @@ namespace MessagingApp.Data
         {
             base.OnModelCreating(builder);
 
-            //sets tha one to many relationships for the DB
             builder.Entity<Chat>().HasOne(x => x.Receiver).WithMany(x => x.ReceiverChats).HasForeignKey(x => x.ReceiverId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Chat>().HasOne(x => x.Sender).WithMany(x => x.SenderChats).HasForeignKey(x => x.SenderId).OnDelete(DeleteBehavior.NoAction);
             builder.Entity<Chat>().HasMany(x => x.Messages).WithOne(x => x.Chat).HasForeignKey(x => x.ChatId).OnDelete(DeleteBehavior.NoAction);

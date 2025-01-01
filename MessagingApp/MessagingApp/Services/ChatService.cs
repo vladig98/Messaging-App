@@ -6,50 +6,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MessagingApp.Services
 {
-    public class ChatService : IChatService
+    public class ChatService(MessageAppDbContext context, IUserService userService, ILogger<ChatService> logger) : IChatService
     {
-        private readonly MessageAppDbContext _context;
-        private readonly IUserService _userService;
-        private readonly ILogger<ChatService> _logger;
-
-        public ChatService(MessageAppDbContext context, IUserService userService, ILogger<ChatService> logger)
-        {
-            _context = context;
-            _userService = userService;
-            _logger = logger;
-        }
+        private readonly MessageAppDbContext _context = context;
+        private readonly IUserService _userService = userService;
+        private readonly ILogger<ChatService> _logger = logger;
 
         public async Task<ChatDto> GetChatInfo(string senderId, string receiverId)
         {
-            bool swap = false;
-            var chatDb = await _context.Chats.Include(x => x.Messages).FirstOrDefaultAsync(x => x.ReceiverId == receiverId && x.SenderId == senderId);
+            (bool isSenderTheSender, Chat chat) = await GetOrCreate(senderId, receiverId);
 
-            if (chatDb == null)
+            List<MessageDto> messages = [];
+
+            foreach (Message message in chat.Messages.OrderBy(x => x.Time))
             {
-                chatDb = await _context.Chats.Include(x => x.Messages).FirstOrDefaultAsync(x => x.ReceiverId == senderId && x.SenderId == receiverId);
-                swap = true;
-            }
-
-            if (chatDb == null)
-            {
-                chatDb = new Chat()
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Messages = new List<Message>(),
-                    ReceiverId = receiverId,
-                    SenderId = senderId,
-                    StartDate = DateTime.Now,
-                };
-
-                await _context.Chats.AddAsync(chatDb);
-                await _context.SaveChangesAsync();
-            }
-
-            List<MessageDto> messages = new List<MessageDto>();
-
-            foreach (var message in chatDb.Messages.OrderBy(x => x.Time))
-            {
-                messages.Add(new MessageDto()
+                messages.Add(new()
                 {
                     ChatId = message.ChatId,
                     Id = message.Id,
@@ -58,46 +29,70 @@ namespace MessagingApp.Services
                 });
             }
 
-            var receiver = await _userService.GetUserById(receiverId);
-            var sender = await _userService.GetUserById(senderId);
+            User receiver = await _userService.GetUserById(receiverId);
+            User sender = await _userService.GetUserById(senderId);
 
-            var chat = new ChatDto()
+            ChatDto chatDto = new()
             {
-                Id = chatDb.Id,
-                ReceiverId = swap ? chatDb.SenderId : chatDb.ReceiverId,
-                SenderId = swap ? chatDb.ReceiverId : chatDb.SenderId,
-                StartDate = chatDb.StartDate,
-                Receiver = new UserDto()
+                Id = chat.Id,
+                ReceiverId = isSenderTheSender ? chat.SenderId : chat.ReceiverId,
+                SenderId = isSenderTheSender ? chat.ReceiverId : chat.SenderId,
+                StartDate = chat.StartDate,
+                Receiver = new()
                 {
                     Id = receiver.Id,
                     Image = receiver.ImageURL,
-                    Username = receiver.UserName
+                    Username = receiver.UserName ?? string.Empty
                 },
-                Sender = new UserDto()
+                Sender = new()
                 {
                     Id = sender.Id,
                     Image = sender.ImageURL,
-                    Username = sender.UserName
+                    Username = sender.UserName ?? string.Empty
                 },
                 Messages = messages
             };
 
-            return chat;
+            return chatDto;
         }
 
         public async Task SendMessage(MessageDto message)
         {
-            var messageDb = new Message()
+            Message messageDb = new()
             {
                 ChatId = message.ChatId,
-                Id = Guid.NewGuid().ToString(),
                 Text = message.Text,
-                UserId = message.UserId,
-                Time = DateTime.UtcNow
+                UserId = message.UserId
             };
 
             await _context.Messages.AddAsync(messageDb);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Message Id: {Id} for ChatId: {ChatId} sent from UserId: {UserId} saved successfully!", messageDb.Id, messageDb.ChatId, messageDb.UserId);
+        }
+
+        private async Task<(bool, Chat)> GetOrCreate(string senderId, string receiverId)
+        {
+            Chat? chat = await _context.Chats.Include(x => x.Messages).FirstOrDefaultAsync(x => x.ReceiverId == receiverId && x.SenderId == senderId);
+            chat ??= await _context.Chats.Include(x => x.Messages).FirstOrDefaultAsync(x => x.ReceiverId == senderId && x.SenderId == receiverId);
+
+            if (chat == null)
+            {
+                chat = new()
+                {
+                    ReceiverId = receiverId,
+                    SenderId = senderId
+                };
+
+                await _context.Chats.AddAsync(chat);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Chat between SenderId: {SenderId} and ReceiverId: {ReceiverId} created successfully!", senderId, receiverId);
+            }
+
+            bool isSenderTheSender = chat.SenderId == senderId;
+
+            return (isSenderTheSender, chat);
         }
     }
 }

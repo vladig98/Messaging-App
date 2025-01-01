@@ -10,11 +10,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Primitives;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-var jwtIssuer = builder.Configuration["MessagingApp:JWT:Issuer"];
-var jwtKey = builder.Configuration["MessagingApp:JWT:Key"];
+string[] signalRPaths = builder.Configuration.GetSection("SignalRPaths").Get<string[]>() ?? [];
+
+if (signalRPaths.Length == 0)
+{
+    throw new InvalidOperationException("No SignalR URLs configured.");
+}
+
+string jwtIssuer = builder.Configuration["MessagingApp:JWT:Issuer"] ?? throw new InvalidOperationException("No JWT issuer provided!");
+string jwtKey = builder.Configuration["MessagingApp:JWT:Key"] ?? throw new InvalidOperationException("No JWT Key provided!");
 
 // Service Registration
 builder.Services.AddIdentityCore<User>().AddSignInManager().AddRoles<Role>().AddEntityFrameworkStores<MessageAppDbContext>().AddDefaultTokenProviders();
@@ -22,8 +30,8 @@ builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IChatService, ChatService>();
 
 // Database Context Setup
-var connectionString = builder.Configuration["ConnectionStrings:AZURE_SQL_CONNECTIONSTRING"] ??
-        throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+string connectionString = builder.Configuration["ConnectionStrings:MainDb"] ?? throw new InvalidOperationException("Connection string 'MainDb' not found.");
+
 builder.Services.AddDbContext<MessageAppDbContext>(options => options.UseSqlServer(connectionString, b =>
 {
     b.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
@@ -46,25 +54,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
          ClockSkew = TimeSpan.Zero
      };
 
-     //adds authentication to SignalR
+     // SignalR Authentication
      options.Events = new JwtBearerEvents
      {
          OnMessageReceived = context => {
-             var accessToken = context.Request.Query["access_token"];
+             StringValues accessToken = context.Request.Query["access_token"];
 
              // If the request is for our hub...
-             var path = context.HttpContext.Request.Path;
-             if (!string.IsNullOrEmpty(accessToken) &&
-                 ((path.StartsWithSegments("/getuserinfo")) ||
-                     (path.StartsWithSegments("/getchatinfo"))))
+             PathString path = context.HttpContext.Request.Path;
+
+             if (StringValues.IsNullOrEmpty(accessToken))
              {
-                 // Read the token out of the query string
-                 context.Token = accessToken;
+                 return Task.CompletedTask;
              }
+
+             if (!signalRPaths.Any(x => path.StartsWithSegments(x)))
+             {
+                 return Task.CompletedTask;
+             }
+
+             context.Token = accessToken;
+
              return Task.CompletedTask;
          }
      };
  });
+
 builder.Services.AddAuthorization();
 
 // Middleware Setup
@@ -79,29 +94,28 @@ builder.Services.AddSwaggerGen(cfg =>
         Description = "JWT as Bearer",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        //allows entering JWT without typing Bearer in front of it while ApiKey requires to write Bearer in fromt of the token
+        // Allows entering JWT token without 'Bearer' keyword
         Type = SecuritySchemeType.Http,
         Scheme = "Bearer"
     });
 
+    OpenApiSecurityScheme scheme = new()
+    {
+        Reference = new OpenApiReference
+        {
+            Type = ReferenceType.SecurityScheme,
+            Id = "Bearer"
+        }
+    };
+
     cfg.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        {
-        new OpenApiSecurityScheme
-            {
-        Reference = new OpenApiReference
-                {
-        Type = ReferenceType.SecurityScheme,
-        Id = "Bearer"
-    }
-            },
-    new string[] {}
-        }
+        { scheme, [] }
     });
 });
 
 // Application Setup
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Development specific configurations
 if (app.Environment.IsDevelopment())
@@ -119,7 +133,7 @@ app.UseAuthorization();
 
 // Endpoint mapping
 app.MapControllers();
-app.MapHub<UserHub>("/getuserinfo");
-app.MapHub<ChatHub>("/getchatinfo");
+app.MapHub<UserHub>(builder.Configuration["SignalRPaths:UserHub"] ?? throw new InvalidOperationException("No SignalR URL for Users."));
+app.MapHub<ChatHub>(builder.Configuration["SignalRPaths:ChatHub"] ?? throw new InvalidOperationException("No SignalR URL for Chat."));
 
 app.Run();

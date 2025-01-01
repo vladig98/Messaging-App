@@ -2,20 +2,15 @@
 {
     public class Chat
     {
-        public Chat()
-        {
-            Messages = new List<Message>();
-        }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
 
-        public string Id { get; set; }
-        public DateTime StartDate { get; set; }
+        public string SenderId { get; set; } = string.Empty;
+        public User Sender { get; set; } = new();
 
-        public string SenderId { get; set; }
-        public User Sender { get; set; }
+        public string ReceiverId { get; set; } = string.Empty;
+        public User Receiver { get; set; } = new();
 
-        public string ReceiverId { get; set; }
-        public User Receiver { get; set; }
-
-        public List<Message> Messages { get; set; }
+        public List<Message> Messages { get; set; } = [];
     }
 }

@@ -8,6 +8,6 @@
         /// <summary>
         /// Gets or sets the ID of the user.
         /// </summary>
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
     }
 }
